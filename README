@@ -1,0 +1,42 @@
+Dynamic wordpress hosting provider
+----------------------------------
+
+I need a mini hosting service exposing wordpress websites under subdomains of a configurable top-level domain.
+
+For instance, it could be hosted under smarthosting.com domain, and each hosted
+website would be exposed under *.smarthosting.com, where some subdomains
+are reserved to expose the following services: 
+ - ns.smarthosting.com: DNS server configured to properly resolve *.smarthosting.com domain names;
+ - www.smarthosting.com: exposing a static landing page (provided as `index.html`);
+ - ms.smarthosting.com: exposing a password-protected Kibana exposing service logs ingested by an Elasticsearch system.
+
+The whole service must be implemented within a docker-in-docker container to deploy manually website containers upon request via email.
+A draft `Dockerfile` is provided to build the image for such contaoiner.
+The provided `entrypoint.sh` script must be extended to cover the deployment of the following services as separate containers:
+ - a reverse proxy (you choose - haproxy
+ - a DNS server (you choose - bind9
+ - a static website exposing index.html (you choose - apache2, lighttpd, ...)
+ - a mysql database shared across the wordpress websites (see `website.sh` to configure MYSQL_USER and MYSQL_PASSWORD accordingly)
+ - elasticsearch 
+ - kibana
+ - filebeat (sending all docker logs to elasticsearch)
+You have freedom to choose how to deploy the above services.
+
+The provided `website.sh` script can be used within the container to manage websites deployment, just manually running it from the container console.
+The cleanup action is to be implemented and executed periodically for cleaning up unused containers and volumes.
+
+Optionally, you can push this project to a private Gitlab repository and implement a Gitalb CI pipeline
+with steps to build the image and push the resulting image to the repository registry.
+
+Hints:
+ - to build the docker image use the `--network host` option if apk fails to download packages
+ - this is an example of how to run the main container:
+```
+docker run -d --privileged \
+    --restart always \
+    --name hosting \
+    -p 80:80 \
+    -p 53:53/udp \
+    -p 53:53/tcp \
+    hosting
+```
